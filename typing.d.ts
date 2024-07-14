@@ -3,6 +3,14 @@ interface ApiResponse<T> {
   status: Status
 }
 
+interface ApiError {
+  error: {
+    code: string
+    message: string
+    details: string
+  }
+}
+
 interface ExchangeTokenResponse {
   accessToken: string
 }
