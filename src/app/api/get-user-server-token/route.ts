@@ -10,16 +10,19 @@ export async function GET(req: NextRequest) {
   const userToken = authorization?.split(' ')[1]
 
   try {
-    const response = await fetch(`${config.DOMAIN}/spa/oauth2/v1/users/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${basicAuth}`,
-      },
-      body: JSON.stringify({
-        userAccessToken: userToken,
-      }),
-    })
+    const response = await fetch(
+      `${config.SUPERAPP_URL}/spa/oauth2/v1/users/token`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${basicAuth}`,
+        },
+        body: JSON.stringify({
+          userAccessToken: userToken,
+        }),
+      }
+    )
 
     if (!response.ok) {
       const errorResult = await response.json()

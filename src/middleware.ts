@@ -3,12 +3,15 @@ import { default as AppConfig } from '@/app/config'
 
 async function getUserServerToken(token: string): Promise<string> {
   try {
-    const response = await fetch(`${AppConfig.URL}/api/get-user-server-token`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    const response = await fetch(
+      `${AppConfig.NEXT_URL}/api/get-user-server-token`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
 
     if (!response.ok) {
       throw new Error('Failed to issue user server token')
@@ -65,5 +68,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/deduct-reward'],
+  matcher: ['/api/deduct-reward', '/api/get-coupon', '/api/get-coupon-detail'],
 }

@@ -1,8 +1,10 @@
 'use client'
 
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { getCoupon } from '@/app/api/get-coupon/actions'
+import { exchangeToken } from '@/app/utils/sdk'
+import { getCouponDetail } from '@/app/api/get-coupon-detail/actions'
 
 const getRandomCard = () => Math.floor(Math.random() * 13) + 1
 
@@ -12,34 +14,55 @@ export default function Game() {
   const [showLoseModal, setShowLoseModal] = useState(false)
   const [result, setResult] = useState('')
   const [score, setScore] = useState(0)
+  const [couponImage, setCouponImage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const guessHigher = () => {
-    const nextCard = getRandomCard()
-    setCurrentCard(nextCard)
-    if (nextCard > currentCard) {
-      handleWin(nextCard)
-    } else {
-      handleLose(nextCard)
+  const guessHigher = async () => {
+    setLoading(true)
+    try {
+      const nextCard = getRandomCard()
+      setCurrentCard(nextCard)
+      if (nextCard > currentCard) {
+        await handleWin(nextCard)
+      } else {
+        handleLose(nextCard)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
-  const guessLower = () => {
-    const nextCard = getRandomCard()
-    setCurrentCard(nextCard)
-    if (nextCard < currentCard) {
-      handleWin(nextCard)
-    } else {
-      handleLose(nextCard)
+  const guessLower = async () => {
+    setLoading(true)
+    try {
+      const nextCard = getRandomCard()
+      setCurrentCard(nextCard)
+      if (nextCard < currentCard) {
+        await handleWin(nextCard)
+      } else {
+        handleLose(nextCard)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleWin = async (nextCard: number) => {
     if (score + 1 === 1) {
+      const data = await exchangeToken()
       // User wins and gets a coupon
-      const response = await axios.get('/api/get-coupon')
-      setResult(`You won! Coupon: ${response.data.coupon}`)
-      setScore(0) // Reset score after getting coupon
+      if (data?.accessToken) {
+        const coupon = await getCouponDetail(data.accessToken)
+        console.log('🔥  coupon:', coupon)
+        if (coupon) {
+          await getCoupon(data.accessToken)
+        }
+
+        setResult(`You won! Coupon: ${coupon.name}`)
+        setCouponImage(coupon.imageUrl) // Set the coupon image URL in state
+        setScore(0) // Reset score after getting coupon
+      }
     } else {
       setResult(`Correct!`)
       setScore(score + 1)
@@ -68,31 +91,40 @@ export default function Game() {
         <div className="flex space-x-4 mt-4">
           <button
             onClick={guessHigher}
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            className={`px-4 py-2 rounded ${
+              loading ? 'bg-gray-500' : 'bg-green-500 text-white'
+            }`}
+            disabled={loading}
           >
-            Higher
+            {loading ? 'Loading...' : 'Higher'}
           </button>
           <button
             onClick={guessLower}
-            className="px-4 py-2 bg-red-500 text-white rounded"
+            className={`px-4 py-2 rounded ${
+              loading ? 'bg-gray-500' : 'bg-red-500 text-white'
+            }`}
+            disabled={loading}
           >
-            Lower
+            {loading ? 'Loading...' : 'Lower'}
           </button>
         </div>
       </div>
 
       {showWinModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-80 h-60 border-2 border-gray-300 rounded-lg bg-white p-4 flex flex-col items-center justify-center">
+          <div className="w-80 h-80 border-2 border-gray-300 rounded-lg bg-white p-4 flex flex-col items-center justify-center">
             <div className="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mb-4">
               <h1 className="text-4xl font-bold">{currentCard}</h1>
             </div>
             <p>{result}</p>
+            {couponImage && (
+              <img src={couponImage} alt="Coupon" className="w-24 h-24 mt-2" />
+            )}
             <button
-              onClick={() => setShowWinModal(false)}
+              onClick={() => router.push('/')}
               className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
             >
-              Next Round
+              End.
             </button>
           </div>
         </div>

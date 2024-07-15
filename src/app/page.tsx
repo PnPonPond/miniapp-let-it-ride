@@ -12,11 +12,20 @@ import {
 export default function Home() {
   const [points, setPoints] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [loadingPoints, setLoadingPoints] = useState(false)
+  const [loadingGame, setLoadingGame] = useState(false)
   const router = useRouter()
 
   const getPoints = async () => {
-    const points = await getAllmemberPoints()
-    setPoints(points)
+    setLoadingPoints(true)
+    try {
+      const points = await getAllmemberPoints()
+      setPoints(points)
+    } catch (error) {
+      console.log('🔥  error:', error)
+    } finally {
+      setLoadingPoints(false)
+    }
   }
 
   useEffect(() => {
@@ -27,6 +36,7 @@ export default function Home() {
     if (!window.MiniAppSDK) return
 
     if (points && points > 1) {
+      setLoadingGame(true)
       try {
         const data = await exchangeToken()
         const response = await fetch(`/api/deduct-reward`, {
@@ -43,6 +53,8 @@ export default function Home() {
         }
       } catch (error) {
         console.log('🔥  error:', error)
+      } finally {
+        setLoadingGame(false)
       }
     } else {
       setShowModal(true)
@@ -66,8 +78,9 @@ export default function Home() {
           <button
             className="ml-4 px-4 py-2 bg-red-500 text-white rounded"
             onClick={getPoints}
+            disabled={loadingPoints}
           >
-            getPoints
+            {loadingPoints ? 'Loading...' : 'Get Points'}
           </button>
         ) : (
           points
@@ -77,8 +90,9 @@ export default function Home() {
         <button
           onClick={startGame}
           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+          disabled={loadingGame}
         >
-          Start Game (1 points)
+          {loadingGame ? 'Loading...' : 'Start Game (1 point)'}
         </button>
       )}
 

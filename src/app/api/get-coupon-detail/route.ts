@@ -2,25 +2,22 @@ import config from '@/app/config'
 import { mapErrorResponse } from '@/app/utils/mapErrorResponse'
 import { NextRequest } from 'next/server'
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const authorization = req.headers.get('authorization')
   const token = authorization?.split(' ')[1]
 
   try {
     const response = await fetch(
-      `${config.SUPERAPP_URL}/spa/loyalty/v1/rewards/${config.REWARD_ID}/deduct`,
+      `${config.SUPERAPP_URL}/spa/coupon/v1/${config.CAMPAIGN_PARTNER_CODE}/${config.COUPON_ID}`,
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          campaignId: config.CAMPAIGN_ID,
-          rewardQty: config.REWARD_QTY,
-        }),
       }
     )
+    console.log('🔥  response:', response)
 
     if (!response.ok) {
       const errorResult = await response.json()
@@ -29,7 +26,8 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const result: ApiResponse<DeductTran> = await response.json()
+    const result: ApiResponse<Coupon> = await response.json()
+    console.log('🔥  result:', result)
     return new Response(JSON.stringify({ success: true, data: result.data }), {
       status: 200,
     })
@@ -37,7 +35,7 @@ export async function POST(req: NextRequest) {
     return new Response(
       JSON.stringify({
         success: false,
-        message: 'Failed to deduct points',
+        message: 'Failed to get coupon detail',
       }),
       {
         status: 500,
