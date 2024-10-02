@@ -1,7 +1,7 @@
 'use client'
+
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
 import {
   closeMiniApp,
   exchangeToken,
@@ -16,21 +16,21 @@ export default function Home() {
   const [loadingGame, setLoadingGame] = useState(false)
   const router = useRouter()
 
-  const getPoints = async () => {
+  useEffect(() => {
+    initSDK()
+  }, [])
+
+  const fetchPoints = async () => {
     setLoadingPoints(true)
     try {
       const points = await getAllmemberPoints()
       setPoints(points)
     } catch (error) {
-      console.log('🔥  error:', error)
+      console.error('Error fetching points:', error)
     } finally {
       setLoadingPoints(false)
     }
   }
-
-  useEffect(() => {
-    initSDK()
-  }, [])
 
   const startGame = async () => {
     if (!window.MiniAppSDK) return
@@ -38,21 +38,19 @@ export default function Home() {
     if (points && points > 1) {
       setLoadingGame(true)
       try {
-        const data = await exchangeToken()
-        const response = await fetch(`/api/deduct-reward`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${data?.accessToken}`,
-          },
-        })
+        const tokenData = await exchangeToken()
+        if (!tokenData?.accessToken) {
+          throw new Error('Failed to obtain access token')
+        }
 
+        const response = await deductPoints(tokenData.accessToken)
         if (response.ok) {
           router.push('/game')
         } else {
           setShowModal(true)
         }
       } catch (error) {
-        console.log('🔥  error:', error)
+        console.error('Error starting game:', error)
       } finally {
         setLoadingGame(false)
       }
@@ -60,6 +58,49 @@ export default function Home() {
       setShowModal(true)
     }
   }
+
+  const deductPoints = async (accessToken: string) => {
+    return fetch(`/api/deduct-reward`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+  }
+
+  const renderPointsButton = () => (
+    <button
+      className="ml-4 px-4 py-2 bg-red-500 text-white rounded"
+      onClick={fetchPoints}
+      disabled={loadingPoints}
+    >
+      {loadingPoints ? 'Loading...' : 'Get Points'}
+    </button>
+  )
+
+  const renderStartGameButton = () => (
+    <button
+      onClick={startGame}
+      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+      disabled={loadingGame}
+    >
+      {loadingGame ? 'Loading...' : 'Start Game (1 point)'}
+    </button>
+  )
+
+  const renderModal = () => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white p-4 rounded">
+        <p>Insufficient points</p>
+        <button
+          onClick={() => setShowModal(false)}
+          className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
@@ -73,42 +114,11 @@ export default function Home() {
       </div>
       <h1 className="text-4xl font-bold">Let It Ride</h1>
       <p>
-        points:
-        {points == null ? (
-          <button
-            className="ml-4 px-4 py-2 bg-red-500 text-white rounded"
-            onClick={getPoints}
-            disabled={loadingPoints}
-          >
-            {loadingPoints ? 'Loading...' : 'Get Points'}
-          </button>
-        ) : (
-          points
-        )}
+        Points:
+        {points == null ? renderPointsButton() : points}
       </p>
-      {!!points && (
-        <button
-          onClick={startGame}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-          disabled={loadingGame}
-        >
-          {loadingGame ? 'Loading...' : 'Start Game (1 point)'}
-        </button>
-      )}
-
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-4 rounded">
-            <p>Insufficient points</p>
-            <button
-              onClick={() => setShowModal(false)}
-              className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {!!points && renderStartGameButton()}
+      {showModal && renderModal()}
     </div>
   )
 }

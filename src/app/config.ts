@@ -1,17 +1,18 @@
 const config = {
-  REWARD_ID: 808,
-  REWARD_QTY: 1,
-  CAMPAIGN_ID: '2024015303',
-  SUPERAPP_URL: 'https://api-gw-stg.7app.7eleven.co.th',
-  APP_ID: 'my-miniapp1',
-  SERVER_ID: 'my-miniapp-server1',
-  SERVER_SECRET: '3bs4Wd5GOhagOWFAFB7GOLtHGMGEwkRx',
-  NEXT_URL: 'https://pon-pond.ngrok.app/',
+  REWARD_ID: Number(process.env.REWARD_ID) || 0,
+  REWARD_QTY: Number(process.env.REWARD_QTY) || 1,
+  CAMPAIGN_ID: process.env.CAMPAIGN_ID || '',
+  SUPERAPP_URL: process.env.SUPERAPP_URL || '',
+  APP_ID: process.env.APP_ID || 'my-miniapp1',
+  SERVER_ID: process.env.SERVER_ID || 'my-miniapp-server1',
+  SERVER_SECRET:
+    process.env.SERVER_SECRET || '3bs4Wd5GOhagOWFAFB7GOLtHGMGEwkRx',
+  NEXT_URL: process.env.NEXT_URL || 'https://pon-pond.ngrok.app/',
   // TEST COUPON
-  COUPON_ID: '6694cdfacf',
+  // COUPON_ID: process.env.TEST_COUPON_ID || '',
   // REAL COUPON
-  // COUPON_ID: '66951ad9cf',
-  CAMPAIGN_PARTNER_CODE: 'acquisition',
+  COUPON_ID: process.env.COUPON_ID || '',
+  CAMPAIGN_PARTNER_CODE: process.env.CAMPAIGN_PARTNER_CODE || '',
 }
 
 export default config
